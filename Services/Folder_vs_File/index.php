@@ -6,4 +6,4 @@ $folder = new FolderService();
 // $folder->create('test');
 
 /* remove folder */
-$folder->remove('test');
+$folder->rrmdir('test');
