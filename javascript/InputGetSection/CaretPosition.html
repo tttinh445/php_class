@@ -1,0 +1,161 @@
+<html>
+<script src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+<body>
+    <h2>demo setCaretPosition and getInputSelection</h2>
+    <!-- <div class="no-ime">
+        <input class="no-ime__input" type="text">
+        <input class="no-ime__proxy" type="password">
+    </div> -->
+
+
+    <input id="demo" class="demo" type="text" value="23432424324">
+    <input id="demoP" class="demoP" type="password">
+
+    B
+    <input type="text" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');" />
+
+    C
+    <input type="text" id="test-input" value="Example" />
+
+    <button id="trigger">sdfsf</button>
+    <span id="result"></span>
+    <script id="rendered-js">
+        function setCaretPosition(ctrl, pos) {
+            // Modern browsers
+            if (ctrl.setSelectionRange) {
+                ctrl.focus();
+                ctrl.setSelectionRange(pos.start, pos.end);
+
+                // IE8 and below
+            } else if (ctrl.createTextRange) {
+                var range = ctrl.createTextRange();
+                range.collapse(true);
+                range.moveEnd('character', pos.end);
+                range.moveStart('character', pos.start);
+                range.select();
+            }
+        }
+
+
+
+
+        function getInputSelection(el) {
+            var start = 0, end = 0, normalizedValue, range, textInputRange, len, endRange;
+
+            if (typeof el.selectionStart == "number" && typeof el.selectionEnd == "number") {
+                start = el.selectionStart;
+                end = el.selectionEnd;
+            } else {
+                range = document.selection.createRange();
+
+                if (range && range.parentElement() == el) {
+                    len = el.value.length;
+                    normalizedValue = el.value.replace(/\r\n/g, "\n");
+
+                    // Create a working TextRange that lives only in the input
+                    textInputRange = el.createTextRange();
+                    textInputRange.moveToBookmark(range.getBookmark());
+
+                    // Check if the start and end of the selection are at the very end
+                    // of the input, since moveStart/moveEnd doesn't return what we want
+                    // in those cases
+                    endRange = el.createTextRange();
+                    endRange.collapse(false);
+
+                    if (textInputRange.compareEndPoints("StartToEnd", endRange) > -1) {
+                        start = end = len;
+                    } else {
+                        start = -textInputRange.moveStart("character", -len);
+                        start += normalizedValue.slice(0, start).split("\n").length - 1;
+
+                        if (textInputRange.compareEndPoints("EndToEnd", endRange) > -1) {
+                            end = len;
+                        } else {
+                            end = -textInputRange.moveEnd("character", -len);
+                            end += normalizedValue.slice(0, end).split("\n").length - 1;
+                        }
+                    }
+                }
+            }
+
+            return {
+                start: start,
+                end: end
+            };
+        }
+
+
+        document.getElementById("trigger").addEventListener("click", function () {
+            var input = document.getElementById("demo");
+            var inputContent = input.value.length;
+            // You may want to focus the textbox in case it's not
+            input.focus();
+            var result = getInputSelection(input);
+            var resultSpan = document.getElementById("result");
+
+            if (result.start == result.end) {
+                resultSpan.innerHTML = "No text selected. Position of cursor is " + result.start + " of " + inputContent;
+            } else {
+                resultSpan.innerHTML = "You've selected text (" + result.start + " to " + result.end + ") from a total length of " + inputContent;
+            }
+
+        }, false);
+
+
+        var keyCode = '';
+        $('.demo').on('focus', function (event) {
+            $('.demoP').val($(this).val());
+        });
+
+        $('.demo').on('mouseup', function (event) {
+            console.log('onmouseup');
+            //  setTimeout(() => {
+                $('.demoP').val($('.demo').val());
+                let inputSection = getInputSelection(document.getElementById('demo'));
+                var input = document.getElementById('demoP');
+                console.log(inputSection);
+                setCaretPosition(input, inputSection);
+            // }, 100);
+        });
+
+
+        $('.demo').on('keydown', function (event) {
+            keyCode = event.which;
+            console.log(keyCode);
+            if ((keyCode >= 48)) {
+                $('.demoP').val($(this).val());
+            }
+        });
+
+        $('.demo').on('input', function (event) {
+                console.log('input');
+                setTimeout(() => {
+                    let inputSection = getInputSelection(document.getElementById('demo'));
+                    var input = document.getElementById('demoP');
+                    console.log(inputSection);
+                    setCaretPosition(input, inputSection);
+                }, 100);
+            });
+
+        $('.demoP').on('input', function (event) {
+            $('.demo').val(converToUnicode($(this).val()));
+        });
+
+        function converToUnicode(param) {
+            var chars = param;
+            var ascii = '';
+            for (var i = 0, l = chars.length; i < l; i++) {
+                var c = chars[i].charCodeAt(0);
+
+                // make sure we only convert half-full width char
+                if (c >= 0xFF00 && c <= 0xFFEF) {
+                    c = 0xFF & (c + 0x20);
+                }
+                ascii += String.fromCharCode(c);
+            }
+            return ascii;
+        }
+    </script>
+</body>
+
+</html>
